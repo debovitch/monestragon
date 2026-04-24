@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { JsonLd } from "@/components/JsonLd";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -9,6 +10,7 @@ import {
   createWebPageJsonLd,
 } from "@/lib/seo";
 import { useState } from "react";
+import { z } from "zod";
 
 export const Route = createFileRoute("/confrerie")({
   head: () =>
@@ -20,6 +22,75 @@ export const Route = createFileRoute("/confrerie")({
     }),
   component: ConfreriePage,
 });
+
+const allegianceSchema = z.object({
+  email: z.string().trim().email("Adresse email invalide."),
+  motivation: z
+    .string()
+    .trim()
+    .min(10, "Explique un peu plus ta vocation.")
+    .max(1000, "Le serment est trop long."),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Le nom de scene est trop court.")
+    .max(120, "Le nom de scene est trop long."),
+  oath: z.literal("on", {
+    errorMap: () => ({
+      message: "Le serment doit etre accepte avant l'envoi.",
+    }),
+  }),
+});
+
+const sendAllegianceEmail = createServerFn({ method: "POST" })
+  .inputValidator(allegianceSchema)
+  .handler(async ({ data }) => {
+    const payload = allegianceSchema.parse(data);
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const from = process.env.RESEND_FROM_EMAIL ?? "Monestragon <onboarding@resend.dev>";
+
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY is not configured.");
+    }
+
+    const { Resend } = await import("resend");
+    const resend = new Resend(resendApiKey);
+
+    const submittedAt = new Date().toISOString();
+
+    const { error } = await resend.emails.send({
+      from,
+      to: ["contact@dodecamoon.com"],
+      replyTo: payload.email,
+      subject: `Nouvel acte d'allegeance - ${payload.name}`,
+      text: [
+        "Nouvel acte d'allegeance recu sur monestragon.com",
+        "",
+        `Nom de scene : ${payload.name}`,
+        `Email : ${payload.email}`,
+        `Serment accepte : oui`,
+        `Date : ${submittedAt}`,
+        "",
+        "Justification de la vocation :",
+        payload.motivation,
+      ].join("\n"),
+      html: `
+        <h1>Nouvel acte d'allegeance</h1>
+        <p><strong>Nom de scene :</strong> ${escapeHtml(payload.name)}</p>
+        <p><strong>Email :</strong> ${escapeHtml(payload.email)}</p>
+        <p><strong>Serment accepte :</strong> oui</p>
+        <p><strong>Date :</strong> ${escapeHtml(submittedAt)}</p>
+        <p><strong>Justification de la vocation :</strong></p>
+        <p>${escapeHtml(payload.motivation).replace(/\n/g, "<br />")}</p>
+      `,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
 
 const grades = [
   {
@@ -55,6 +126,9 @@ const grades = [
 ];
 
 function ConfreriePage() {
+  const sendAllegiance = useServerFn(sendAllegianceEmail);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const structuredData = createStructuredDataGraph(
     createWebPageJsonLd({
@@ -141,27 +215,62 @@ function ConfreriePage() {
             </div>
           ) : (
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                setSubmitted(true);
+                setErrorMessage(null);
+                setIsSubmitting(true);
+
+                const form = e.currentTarget;
+                const formData = new FormData(form);
+
+                try {
+                  await sendAllegiance({
+                    data: allegianceSchema.parse({
+                      name: formData.get("name"),
+                      email: formData.get("email"),
+                      motivation: formData.get("motivation"),
+                      oath: formData.get("oath"),
+                    }),
+                  });
+
+                  form.reset();
+                  setSubmitted(true);
+                } catch (error) {
+                  const fallbackMessage =
+                    "L'acte d'allegeance n'a pas pu etre envoye. Reessaie dans un instant.";
+
+                  if (error instanceof z.ZodError) {
+                    setErrorMessage(error.issues[0]?.message ?? fallbackMessage);
+                  } else if (error instanceof Error) {
+                    setErrorMessage(error.message || fallbackMessage);
+                  } else {
+                    setErrorMessage(fallbackMessage);
+                  }
+                } finally {
+                  setIsSubmitting(false);
+                }
               }}
               className="space-y-6"
             >
               <div>
-                <label className="smallcaps text-accent block mb-2">
+                <label htmlFor="name" className="smallcaps text-accent block mb-2">
                   Nom de scène
                 </label>
                 <input
+                  id="name"
+                  name="name"
                   required
                   className="w-full bg-transparent border-b border-accent/40 py-3 px-1 text-lg focus:outline-none focus:border-accent placeholder:text-primary-foreground/30"
                   placeholder="ex : Marguerite la Verte"
                 />
               </div>
               <div>
-                <label className="smallcaps text-accent block mb-2">
+                <label htmlFor="email" className="smallcaps text-accent block mb-2">
                   Email du sanctuaire
                 </label>
                 <input
+                  id="email"
+                  name="email"
                   required
                   type="email"
                   className="w-full bg-transparent border-b border-accent/40 py-3 px-1 text-lg focus:outline-none focus:border-accent placeholder:text-primary-foreground/30"
@@ -169,10 +278,12 @@ function ConfreriePage() {
                 />
               </div>
               <div>
-                <label className="smallcaps text-accent block mb-2">
+                <label htmlFor="motivation" className="smallcaps text-accent block mb-2">
                   Justifiez votre vocation (3 lignes max)
                 </label>
                 <textarea
+                  id="motivation"
+                  name="motivation"
                   required
                   rows={3}
                   className="w-full bg-transparent border-b border-accent/40 py-3 px-1 text-base focus:outline-none focus:border-accent placeholder:text-primary-foreground/30"
@@ -184,6 +295,7 @@ function ConfreriePage() {
                   required
                   type="checkbox"
                   id="oath"
+                  name="oath"
                   className="mt-1.5 accent-accent"
                 />
                 <label
@@ -194,11 +306,17 @@ function ConfreriePage() {
                   discernement, ferveur, et un certain sens de l'humour.
                 </label>
               </div>
+              {errorMessage ? (
+                <p className="rounded-sm border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-primary-foreground">
+                  {errorMessage}
+                </p>
+              ) : null}
               <button
                 type="submit"
-                className="w-full bg-accent text-accent-foreground py-4 smallcaps hover:bg-gold transition-colors mt-6"
+                disabled={isSubmitting}
+                className="mt-6 w-full bg-accent py-4 smallcaps text-accent-foreground transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Prêter serment →
+                {isSubmitting ? "Transmission du serment..." : "Prêter serment →"}
               </button>
             </form>
           )}
@@ -208,4 +326,13 @@ function ConfreriePage() {
       <SiteFooter />
     </div>
   );
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
