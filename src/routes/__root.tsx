@@ -1,4 +1,10 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { JsonLd } from "@/components/JsonLd";
+import {
+  createOrganizationJsonLd,
+  createStructuredDataGraph,
+  createWebsiteJsonLd,
+} from "@/lib/seo";
 
 import appCss from "../styles.css?url";
 
@@ -32,17 +38,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "monestragon.com — Le journal du culte" },
-      { name: "description", content: "Le sanctuaire numérique de Nicolas XII, gardien de l'estragon. Manifeste, recettes sacrées et confrérie." },
       { name: "author", content: "Confrérie de l'Estragon Souverain" },
-      { property: "og:title", content: "monestragon.com — Le journal du culte" },
-      { property: "og:description", content: "Le sanctuaire numérique de Nicolas XII, gardien de l'estragon. Manifeste, recettes sacrées et confrérie." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "monestragon.com — Le journal du culte" },
-      { name: "twitter:description", content: "Le sanctuaire numérique de Nicolas XII, gardien de l'estragon. Manifeste, recettes sacrées et confrérie." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/54d26bcd-2065-41df-b3bb-efc4c7c9ec64/id-preview-0602687f--9bfdb212-faa6-4c58-a1a8-a502eedc4d4b.lovable.app-1777010502067.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/54d26bcd-2065-41df-b3bb-efc4c7c9ec64/id-preview-0602687f--9bfdb212-faa6-4c58-a1a8-a502eedc4d4b.lovable.app-1777010502067.png" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -66,5 +62,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <>
+      <JsonLd
+        data={createStructuredDataGraph(createWebsiteJsonLd(), createOrganizationJsonLd())}
+      />
+      <Outlet />
+    </>
+  );
 }

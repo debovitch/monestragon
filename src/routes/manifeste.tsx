@@ -1,16 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { JsonLd } from "@/components/JsonLd";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import {
+  createBreadcrumbJsonLd,
+  createSeoHead,
+  createStructuredDataGraph,
+  createWebPageJsonLd,
+} from "@/lib/seo";
 
 export const Route = createFileRoute("/manifeste")({
-  head: () => ({
-    meta: [
-      { title: "Le Manifeste — monestragon.com" },
-      { name: "description", content: "Les sept commandements de l'estragon, dictés par Nicolas XII en personne, un matin de janvier vers 6h12." },
-      { property: "og:title", content: "Le Manifeste de l'Estragon" },
-      { property: "og:description", content: "Sept commandements pour une vie aromatique pleinement vécue." },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "Le Manifeste — monestragon.com",
+      description:
+        "Les sept commandements de l'estragon, dictés par Nicolas XII en personne, un matin de janvier vers 6h12.",
+      path: "/manifeste",
+    }),
   component: ManifestePage,
 });
 
@@ -25,8 +31,22 @@ const commandments = [
 ];
 
 function ManifestePage() {
+  const structuredData = createStructuredDataGraph(
+    createWebPageJsonLd({
+      title: "Le Manifeste — monestragon.com",
+      description:
+        "Les sept commandements de l'estragon, dictes par Nicolas XII en personne, un matin de janvier vers 6h12.",
+      path: "/manifeste",
+    }),
+    createBreadcrumbJsonLd([
+      { name: "Accueil", path: "/" },
+      { name: "Le Manifeste", path: "/manifeste" },
+    ]),
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
+      <JsonLd data={structuredData} />
       <SiteHeader />
 
       <section className="mx-auto max-w-3xl px-6 pt-24 pb-16 text-center">
@@ -35,9 +55,9 @@ function ManifestePage() {
           Le <span className="display-italic">Manifeste.</span>
         </h1>
         <p className="mt-10 text-lg text-muted-foreground italic leading-relaxed">
-          Dicté un matin de janvier, vers 6h12, entre une revue de presse et
-          un débat sur les taux directeurs. Sténographié à la hâte sur le dos
-          d'une fiche éditoriale, puis solennellement gravé.
+          Dicté un matin de janvier, vers 6h12, entre une revue de presse et un
+          débat sur les taux directeurs. Sténographié à la hâte sur le dos d'une
+          fiche éditoriale, puis solennellement gravé.
         </p>
       </section>
 
@@ -80,5 +100,8 @@ function ManifestePage() {
 }
 
 function romanize(n: number): string {
-  return ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][n - 1] ?? String(n);
+  return (
+    ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][n - 1] ??
+    String(n)
+  );
 }

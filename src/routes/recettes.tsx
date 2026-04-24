@@ -1,18 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { JsonLd } from "@/components/JsonLd";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import {
+  createBreadcrumbJsonLd,
+  createSeoHead,
+  createStructuredDataGraph,
+  createWebPageJsonLd,
+} from "@/lib/seo";
 import recettesImg from "@/assets/recettes.jpg";
 
 export const Route = createFileRoute("/recettes")({
-  head: () => ({
-    meta: [
-      { title: "Recettes sacrées — monestragon.com" },
-      { name: "description", content: "Le carnet de recettes officiel de Nicolas XII : tiramisu, sushi, café, chocolat chaud — tout est meilleur avec de l'estragon." },
-      { property: "og:title", content: "Recettes sacrées à l'estragon" },
-      { property: "og:description", content: "Là où l'estragon n'a rien à faire — et où il s'invite quand même." },
-      { property: "og:image", content: recettesImg },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "Recettes sacrées — monestragon.com",
+      description:
+        "Le carnet de recettes officiel de Nicolas XII : tiramisu, sushi, café, chocolat chaud, tout est meilleur avec de l'estragon.",
+      path: "/recettes",
+      image: recettesImg,
+    }),
   component: RecettesPage,
 });
 
@@ -62,8 +68,22 @@ const recipes = [
 ];
 
 function RecettesPage() {
+  const structuredData = createStructuredDataGraph(
+    createWebPageJsonLd({
+      title: "Recettes sacrées — monestragon.com",
+      description:
+        "Le carnet de recettes officiel de Nicolas XII : tiramisu, sushi, café, chocolat chaud, tout est meilleur avec de l'estragon.",
+      path: "/recettes",
+    }),
+    createBreadcrumbJsonLd([
+      { name: "Accueil", path: "/" },
+      { name: "Recettes", path: "/recettes" },
+    ]),
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
+      <JsonLd data={structuredData} />
       <SiteHeader />
 
       <section className="relative">
@@ -118,11 +138,13 @@ function RecettesPage() {
         </div>
 
         <div className="mt-20 bg-primary text-primary-foreground p-12 lg:p-16 text-center">
-          <div className="smallcaps text-accent mb-4">Avertissement liturgique</div>
+          <div className="smallcaps text-accent mb-4">
+            Avertissement liturgique
+          </div>
           <p className="font-display text-2xl lg:text-3xl italic max-w-3xl mx-auto leading-snug">
             « Toute substitution par du persil, du cerfeuil ou — pire — de la
-            ciboulette entraîne la nullité du plat et l'exclusion temporaire
-            du dîner. »
+            ciboulette entraîne la nullité du plat et l'exclusion temporaire du
+            dîner. »
           </p>
           <p className="mt-6 smallcaps text-primary-foreground/60">
             Article 4, statuts de la Confrérie

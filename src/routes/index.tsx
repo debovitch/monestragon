@@ -1,35 +1,77 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { JsonLd } from "@/components/JsonLd";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import {
+  createBreadcrumbJsonLd,
+  createSeoHead,
+  createStructuredDataGraph,
+  createWebPageJsonLd,
+} from "@/lib/seo";
 import heroImg from "@/assets/estragon-hero.jpg";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "monestragon.com — Le sanctuaire de Nicolas XII" },
-      { name: "description", content: "Bienvenue sur le blog officiel de Nicolas XII, gardien suprême de l'estragon. Manifeste, recettes, rituels matinaux." },
-      { property: "og:title", content: "monestragon.com — Le sanctuaire de Nicolas XII" },
-      { property: "og:description", content: "Là où l'estragon devient une religion. Et un mode de vie." },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "monestragon.com — Le sanctuaire de Nicolas XII",
+      description:
+        "Bienvenue sur le blog officiel de Nicolas XII, gardien suprême de l'estragon. Manifeste, recettes et rituels matinaux.",
+      path: "/",
+      image: heroImg,
+    }),
   component: Index,
 });
 
 const tenets = [
-  { n: "I", t: "L'estragon précède tout", d: "Avant le sel, avant le poivre, avant le doute : l'estragon." },
-  { n: "II", t: "L'estragon ne suit pas les règles", d: "Il les écrit. Sur le poisson, sur le chocolat, sur le café du matin." },
-  { n: "III", t: "Une recette sans estragon est un brouillon", d: "Y compris les desserts. Surtout les desserts." },
+  {
+    n: "I",
+    t: "L'estragon précède tout",
+    d: "Avant le sel, avant le poivre, avant le doute : l'estragon.",
+  },
+  {
+    n: "II",
+    t: "L'estragon ne suit pas les règles",
+    d: "Il les écrit. Sur le poisson, sur le chocolat, sur le café du matin.",
+  },
+  {
+    n: "III",
+    t: "Une recette sans estragon est un brouillon",
+    d: "Y compris les desserts. Surtout les desserts.",
+  },
 ];
 
 const testimonies = [
-  { who: "J.-B. B., journaliste matinal", quote: "Je l'ai vu en mettre dans son thé. Personne ne devrait jamais voir ça." },
-  { who: "Une consœur anonyme", quote: "Il a corrigé mon ratatouille. Avec de l'estragon. Je n'ai plus jamais cuisiné." },
-  { who: "Un téléspectateur de Matins LCI", quote: "Quand il dit « inflation », j'entends « estragon ». Je crois que c'est volontaire." },
+  {
+    who: "J.-B. B., journaliste matinal",
+    quote:
+      "Je l'ai vu en mettre dans son thé. Personne ne devrait jamais voir ça.",
+  },
+  {
+    who: "Une consœur anonyme",
+    quote:
+      "Il a corrigé mon ratatouille. Avec de l'estragon. Je n'ai plus jamais cuisiné.",
+  },
+  {
+    who: "Un téléspectateur de Matins LCI",
+    quote:
+      "Quand il dit « inflation », j'entends « estragon ». Je crois que c'est volontaire.",
+  },
 ];
 
 function Index() {
+  const structuredData = createStructuredDataGraph(
+    createWebPageJsonLd({
+      title: "monestragon.com — Le sanctuaire de Nicolas XII",
+      description:
+        "Bienvenue sur le blog officiel de Nicolas XII, gardien suprême de l'estragon. Manifeste, recettes et rituels matinaux.",
+      path: "/",
+    }),
+    createBreadcrumbJsonLd([{ name: "Accueil", path: "/" }]),
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
+      <JsonLd data={structuredData} />
       <SiteHeader />
 
       {/* HERO */}
@@ -46,16 +88,20 @@ function Index() {
         </div>
 
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-32 lg:pt-40 lg:pb-48">
-          <div className="ornament smallcaps mb-8">Depuis le matin des temps</div>
+          <div className="ornament smallcaps mb-8">
+            Depuis le matin des temps
+          </div>
           <h1 className="display-xl">
-            L'estragon<br />
+            L'estragon
+            <br />
             <span className="display-italic">n'est pas négociable.</span>
           </h1>
           <p className="mt-10 max-w-2xl text-lg lg:text-xl text-foreground/80 leading-relaxed font-light">
-            Bienvenue sur <strong className="font-medium">monestragon.com</strong>, le journal
+            Bienvenue sur{" "}
+            <strong className="font-medium">monestragon.com</strong>, le journal
             personnel de <em>Nicolas XII</em> — chroniqueur économique le jour,
-            grand prêtre de l'<em>Artemisia Dracunculus</em> à toute heure.
-            Vous êtes ici parce qu'on vous a envoyé. Vous repartirez parce que vous
+            grand prêtre de l'<em>Artemisia Dracunculus</em> à toute heure. Vous
+            êtes ici parce qu'on vous a envoyé. Vous repartirez parce que vous
             ne pourrez plus jamais cuisiner sans.
           </p>
 
@@ -112,7 +158,9 @@ function Index() {
                 <div className="font-display text-7xl italic text-leaf/30 group-hover:text-leaf transition-colors">
                   {t.n}
                 </div>
-                <h3 className="mt-4 font-display text-2xl font-semibold">{t.t}</h3>
+                <h3 className="mt-4 font-display text-2xl font-semibold">
+                  {t.t}
+                </h3>
                 <p className="mt-3 text-muted-foreground">{t.d}</p>
               </div>
             ))}
@@ -126,14 +174,15 @@ function Index() {
           <div>
             <div className="ornament smallcaps mb-6">Le rituel matinal</div>
             <h2 className="font-display text-4xl lg:text-6xl leading-tight">
-              5h47.<br />
+              5h47.
+              <br />
               <span className="italic text-leaf">L'effeuillage commence.</span>
             </h2>
             <div className="mt-8 space-y-5 text-foreground/80 leading-relaxed">
               <p>
                 Avant même que le studio ne s'allume, avant le café, avant le
-                débrief, Nicolas XII procède à <strong>l'effeuillage</strong>. Trois
-                brins, jamais quatre. Jamais deux. Trois.
+                débrief, Nicolas XII procède à <strong>l'effeuillage</strong>.
+                Trois brins, jamais quatre. Jamais deux. Trois.
               </p>
               <p>
                 Posés sur un mouchoir de lin (lavable à 40°), ils sont
@@ -159,8 +208,13 @@ function Index() {
                   ["7h12", "Première bouchée publique en plateau"],
                   ["8h30", "Tweet d'une photo macro de feuille"],
                 ].map(([h, a]) => (
-                  <li key={h} className="flex gap-6 items-baseline border-b border-border pb-4 last:border-0">
-                    <span className="font-display text-2xl text-leaf-deep w-20 shrink-0">{h}</span>
+                  <li
+                    key={h}
+                    className="flex gap-6 items-baseline border-b border-border pb-4 last:border-0"
+                  >
+                    <span className="font-display text-2xl text-leaf-deep w-20 shrink-0">
+                      {h}
+                    </span>
                     <span className="text-foreground/80">{a}</span>
                   </li>
                 ))}
@@ -174,7 +228,9 @@ function Index() {
       <section className="bg-primary text-primary-foreground">
         <div className="mx-auto max-w-6xl px-6 py-28">
           <div className="text-center mb-16">
-            <div className="ornament smallcaps mb-4 text-accent">Témoignages recueillis</div>
+            <div className="ornament smallcaps mb-4 text-accent">
+              Témoignages recueillis
+            </div>
             <h2 className="font-display text-4xl lg:text-5xl">
               Ils l'ont <span className="italic text-accent">vu faire.</span>
             </h2>
@@ -182,7 +238,9 @@ function Index() {
           <div className="grid md:grid-cols-3 gap-8">
             {testimonies.map((t, i) => (
               <figure key={i} className="border-l-2 border-accent pl-6">
-                <div className="font-display text-5xl text-accent leading-none">"</div>
+                <div className="font-display text-5xl text-accent leading-none">
+                  "
+                </div>
                 <blockquote className="mt-2 text-lg italic font-light leading-relaxed">
                   {t.quote}
                 </blockquote>
@@ -199,7 +257,8 @@ function Index() {
       <section className="mx-auto max-w-4xl px-6 py-32 text-center">
         <div className="ornament smallcaps mb-6">Vocation</div>
         <h2 className="font-display text-4xl lg:text-6xl leading-tight">
-          Sentez-vous l'appel<br />
+          Sentez-vous l'appel
+          <br />
           <span className="italic text-leaf">de la feuille étroite ?</span>
         </h2>
         <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto">
